@@ -70,7 +70,7 @@ func TestWatch(t *testing.T) {
 	if err := ioutil.WriteFile(testFile, data, 0644); err != nil {
 		t.Fatalf("Error writing to file %s: %s", testFile, err)
 	}
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	if got, exp := set.Get("font_face").(string), "Monospace"; got != exp {
 		t.Errorf("Expected font_face %s, but got %s", exp, got)
 	}

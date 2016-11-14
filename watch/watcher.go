@@ -27,7 +27,6 @@ type (
 		watched  map[string][]interface{}
 		watchers []string // paths we created watcher on
 		dirs     []string // dirs we are watching
-		done     chan bool
 	}
 
 	// Called on file change directories won't recieve this callback
@@ -57,7 +56,6 @@ func NewWatcher() (*Watcher, error) {
 	w.watched = make(map[string][]interface{})
 	w.watchers = make([]string, 0)
 	w.dirs = make([]string, 0)
-	w.done = make(chan bool)
 	go w.observe()
 
 	return w, nil
@@ -65,13 +63,6 @@ func NewWatcher() (*Watcher, error) {
 
 func (w *Watcher) Close() {
 	notify.Stop(w.fsEvent)
-	close(w.fsEvent)
-	<-w.done
-	close(w.done)
-	w.watched = nil
-	w.watchers = nil
-	w.dirs = nil
-	w.fsEvent = nil
 }
 
 func (w *Watcher) Watch(name string, cb interface{}) error {
@@ -85,10 +76,6 @@ func (w *Watcher) Watch(name string, cb interface{}) error {
 	log.Finest("Watch(%s)", name)
 	fi, err := os.Stat(name)
 	isDir := err == nil && fi.IsDir()
-
-	if isDir {
-		w.flushDir(name)
-	}
 	// If the file doesn't exist currently we will add watcher for file
 	// directory and look for create event inside the directory
 	if os.IsNotExist(err) {
@@ -118,6 +105,9 @@ func (w *Watcher) Watch(name string, cb interface{}) error {
 	}
 	if err := w.watch(name, isDir); err != nil {
 		return err
+	}
+	if isDir {
+		w.flushDir(name)
 	}
 	return nil
 }
@@ -243,7 +233,12 @@ func (w *Watcher) observe() {
 		select {
 		case ev, ok := <-w.fsEvent:
 			if !ok {
-				w.done <- true
+				// We get here only when w.fsEvent is stopped when closing the watcher
+				w.watched = nil
+				w.watchers = nil
+				w.dirs = nil
+				close(w.fsEvent)
+				w.fsEvent = nil
 				return
 			}
 			func() {

@@ -1,13 +1,17 @@
+# The kqueue tag is to make the rjeczalik/fsnotify package
+# use the kqueue backend instead of FSevents in OSX/macOS.
+TAGS:=-tags kqueue
+
 precommit: fmt license test
 
 test:
-	@go test -race $$(go list ./... | grep -v vendor)
+	@go test -race $(TAGS) $$(go list ./... | grep -v vendor)
 fmt:
 	@go fmt $$(go list ./... | grep -v vendor)
 license:
 	@go run $(GOPATH)/src/github.com/limetext/tasks/gen_license.go
 fast_test:
-	@go test $$(go list ./... | grep -v vendor)
+	@go test $(TAGS) $$(go list ./... | grep -v vendor)
 
 check_fmt:
 ifneq ($(shell gofmt -l ./ | grep -v vendor | grep -v testdata),)

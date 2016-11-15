@@ -1,6 +1,9 @@
 # The kqueue tag is to make the rjeczalik/fsnotify package
 # use the kqueue backend instead of FSevents in OSX/macOS.
-TAGS:=-tags kqueue
+OS?=$(shell uname -s)
+ifeq ($(OS),Darwin)
+	TAGS:=-tags kqueue
+endif
 
 precommit: fmt license test
 

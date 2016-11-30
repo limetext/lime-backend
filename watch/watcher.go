@@ -27,6 +27,7 @@ type (
 		watched  map[string][]interface{}
 		watchers []string // paths we created watcher on
 		dirs     []string // dirs we are watching
+		done     chan bool
 	}
 
 	// Called on file change directories won't recieve this callback
@@ -56,6 +57,7 @@ func NewWatcher() (*Watcher, error) {
 	w.watched = make(map[string][]interface{})
 	w.watchers = make([]string, 0)
 	w.dirs = make([]string, 0)
+	w.done = make(chan bool)
 	go w.observe()
 
 	return w, nil
@@ -64,6 +66,7 @@ func NewWatcher() (*Watcher, error) {
 func (w *Watcher) Close() {
 	notify.Stop(w.fsEvent)
 	close(w.fsEvent)
+	<-w.done
 	w.watched = nil
 	w.watchers = nil
 	w.dirs = nil
@@ -238,6 +241,7 @@ func (w *Watcher) observe() {
 		select {
 		case ev, ok := <-w.fsEvent:
 			if !ok {
+				w.done <- true
 				return
 			}
 			func() {

@@ -56,7 +56,7 @@ func NewWatcher() (*Watcher, error) {
 	w.watched = make(map[string][]interface{})
 	w.watchers = make([]string, 0)
 	w.dirs = make([]string, 0)
-	go w.observe()
+	go w.Observe()
 
 	return w, nil
 }
@@ -233,7 +233,7 @@ func (w *Watcher) removeDir(name string) {
 
 // Observe dispatches notifications received by the watcher. This function will
 // return when the watcher is closed.
-func (w *Watcher) observe() {
+func (w *Watcher) Observe() {
 	for {
 		select {
 		case ev, ok := <-w.fsEvent:

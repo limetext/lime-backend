@@ -201,10 +201,15 @@ func (w *Watcher) removeWatch(name string) error {
 	// TODO: notify.Stop(w.fsEvent) would stop ALL watchers
 	// What to do?
 	// fmt.Println("TODO: removeWatch ", name)
-
+	notify.Stop(w.fsEvent)
 	w.watchers = util.Remove(w.watchers, name)
 	if util.Exists(w.dirs, name) {
 		w.removeDir(name)
+	}
+	for watchPath := range w.watched {
+		if err := notify.Watch(watchPath, w.fsEvent, notify.All); err != nil {
+			return err
+		}
 	}
 	return nil
 }
